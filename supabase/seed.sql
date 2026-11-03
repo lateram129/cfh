@@ -20,12 +20,9 @@ INSERT INTO public.matches (tournament_id, home_team_id, away_team_id, match_dat
   ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000002', '11111111-0000-0000-0000-000000000003', '2024-11-17 15:00:00+07', 'Lapangan Bayah', 1, 2, 'finished', 2),
   ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000004', '2024-11-24 15:00:00+07', 'Lapangan Utama Malingping', 0, 0, 'scheduled', 3);
 
--- Sample Standings
-INSERT INTO public.standings (tournament_id, team_id, played, won, drawn, lost, goals_for, goals_against, points) VALUES
-  ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000001', 1, 1, 0, 0, 2, 1, 3),
-  ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000003', 2, 1, 1, 0, 2, 1, 4),
-  ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000004', 2, 0, 1, 1, 0, 2, 1),
-  ('22222222-0000-0000-0000-000000000001', '11111111-0000-0000-0000-000000000002', 2, 0, 0, 2, 2, 3, 0);
+-- Standings are no longer a seeded table — `public.standings` is a VIEW
+-- (see schema.sql) computed live from the matches above, so it already
+-- reflects them with no insert needed here.
 
 -- Sample Trials
 INSERT INTO public.trials (title, club_name, description, requirements, positions, trial_date, location, contact, status, age_min, age_max) VALUES

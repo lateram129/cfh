@@ -145,26 +145,45 @@ CREATE POLICY "goals_admin" ON public.goals FOR ALL
   USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
 
 -- =============================================
--- 7. STANDINGS
+-- 7. STANDINGS — computed VIEW, not a table.
+-- Admin never edits standings directly: they only enter match scores
+-- (`matches.home_score`/`away_score`, `status = 'finished'`) and this view
+-- recalculates played/won/drawn/lost/GF/GA/points on every query, so the
+-- table and the standings can never drift out of sync.
 -- =============================================
-CREATE TABLE IF NOT EXISTS public.standings (
-  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  tournament_id UUID REFERENCES public.tournaments(id) ON DELETE CASCADE,
-  team_id UUID REFERENCES public.teams(id),
-  played INT DEFAULT 0,
-  won INT DEFAULT 0,
-  drawn INT DEFAULT 0,
-  lost INT DEFAULT 0,
-  goals_for INT DEFAULT 0,
-  goals_against INT DEFAULT 0,
-  points INT DEFAULT 0,
-  UNIQUE (tournament_id, team_id)
-);
+DROP TABLE IF EXISTS public.standings CASCADE;
+DROP VIEW IF EXISTS public.standings CASCADE;
 
-ALTER TABLE public.standings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "standings_select_all" ON public.standings FOR SELECT USING (true);
-CREATE POLICY "standings_admin" ON public.standings FOR ALL
-  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin'));
+CREATE VIEW public.standings
+WITH (security_invoker = true) AS
+WITH team_matches AS (
+  SELECT tournament_id, home_team_id AS team_id, home_score AS gf, away_score AS ga,
+         (home_score > away_score)::int AS win,
+         (home_score = away_score)::int AS draw,
+         (home_score < away_score)::int AS loss
+  FROM public.matches
+  WHERE status = 'finished' AND home_team_id IS NOT NULL AND away_team_id IS NOT NULL
+  UNION ALL
+  SELECT tournament_id, away_team_id AS team_id, away_score AS gf, home_score AS ga,
+         (away_score > home_score)::int AS win,
+         (away_score = home_score)::int AS draw,
+         (away_score < home_score)::int AS loss
+  FROM public.matches
+  WHERE status = 'finished' AND home_team_id IS NOT NULL AND away_team_id IS NOT NULL
+)
+SELECT
+  (tournament_id::text || '-' || team_id::text) AS id,
+  tournament_id,
+  team_id,
+  COUNT(*)::int AS played,
+  SUM(win)::int AS won,
+  SUM(draw)::int AS drawn,
+  SUM(loss)::int AS lost,
+  SUM(gf)::int AS goals_for,
+  SUM(ga)::int AS goals_against,
+  (SUM(win) * 3 + SUM(draw))::int AS points
+FROM team_matches
+GROUP BY tournament_id, team_id;
 
 -- =============================================
 -- 8. TRIALS (Open Recruitment / Career Portal)
