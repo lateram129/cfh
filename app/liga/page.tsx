@@ -2,27 +2,36 @@
 
 import { useEffect, useState } from 'react';
 import { useI18n, formatDateTime } from '@/lib/i18n';
-import { getActiveTournament, getMatches, getStandings, getTopScorers, getTeamById } from '@/lib/data';
-import type { Match, Standing, Team, Tournament } from '@/lib/supabase/types';
+import { getActiveTournament, getMatches, getStandings, getTopScorers, getTeams } from '@/lib/data';
+import type { Match, Standing, Team, Tournament, Player } from '@/lib/supabase/types';
 
 type Tab = 'schedule' | 'standings' | 'scorers';
+type Scorer = { player?: Player; team?: Team; goals: number };
 
 export default function LigaPage() {
   const { t, lang } = useI18n();
   const [tab, setTab] = useState<Tab>('schedule');
   const [tournament, setTournament] = useState<Tournament | undefined>(undefined);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [standings, setStandings] = useState<(Standing & { team?: Team })[]>([]);
-  const [scorers, setScorers] = useState<ReturnType<typeof getTopScorers>>([]);
+  const [scorers, setScorers] = useState<Scorer[]>([]);
 
   useEffect(() => {
-    const tourn = getActiveTournament();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setTournament(tourn);
-    setMatches(getMatches(tourn?.id));
-    setStandings(getStandings(tourn?.id));
-    setScorers(getTopScorers());
+    (async () => {
+      const tourn = await getActiveTournament();
+      const [allMatches, allTeams, tableStandings, topScorers] = await Promise.all([
+        getMatches(tourn?.id), getTeams(), getStandings(tourn?.id), getTopScorers(),
+      ]);
+      setTournament(tourn);
+      setMatches(allMatches);
+      setTeams(allTeams);
+      setStandings(tableStandings);
+      setScorers(topScorers);
+    })();
   }, []);
+
+  const teamById = new Map(teams.map((team) => [team.id, team]));
 
   const statusLabel = (s: Match['status']) =>
     s === 'live' ? t.league_status_live : s === 'finished' ? t.league_status_finished : s === 'postponed' ? t.league_status_postponed : t.league_status_scheduled;
@@ -63,8 +72,8 @@ export default function LigaPage() {
         ) : (
           <div className="stack">
             {matches.map((m) => {
-              const home = getTeamById(m.home_team_id);
-              const away = getTeamById(m.away_team_id);
+              const home = m.home_team_id ? teamById.get(m.home_team_id) : undefined;
+              const away = m.away_team_id ? teamById.get(m.away_team_id) : undefined;
               return (
                 <div key={m.id} className="match-card">
                   <div className="flex-between mb-2">

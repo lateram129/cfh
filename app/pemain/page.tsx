@@ -13,8 +13,10 @@ export default function PemainPage() {
   const [position, setPosition] = useState<string>('all');
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate after mount, see lib/data/submissions.ts
-    setPlayers(getApprovedPlayers());
+    (async () => {
+      const data = await getApprovedPlayers();
+      setPlayers(data);
+    })();
   }, []);
 
   const filtered = useMemo(

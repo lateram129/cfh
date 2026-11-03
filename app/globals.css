@@ -1087,4 +1087,15 @@
   .mt-3 { margin-top: 0.75rem; }
   .mb-2 { margin-bottom: 0.5rem; }
   .mb-3 { margin-bottom: 0.75rem; }
+
+  /* Admin dashboard shell — desktop-oriented, separate from the public
+     mobile app-shell (no bottom nav here, see components/AppShell.tsx) */
+  .admin-shell { min-height: 100dvh; display: flex; flex-direction: column; }
+  .admin-topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1rem 1.25rem; border-bottom: 1px solid var(--border-color);
+    background: var(--bg-glass); backdrop-filter: blur(20px);
+    position: sticky; top: 0; z-index: 50;
+  }
+  .admin-container { max-width: 720px; margin-inline: auto; width: 100%; padding: 1.25rem; flex: 1; }
 }

@@ -13,8 +13,10 @@ export default function FanzonePage() {
   const [category, setCategory] = useState('all');
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate after mount
-    setProducts(getProducts());
+    (async () => {
+      const data = await getProducts();
+      setProducts(data);
+    })();
   }, []);
 
   const filtered = useMemo(

@@ -4,8 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useI18n } from '@/lib/i18n';
 import { POSITIONS } from '@/lib/supabase/types';
-import type { Player } from '@/lib/supabase/types';
-import { addLocalPlayer } from '@/lib/data/submissions';
+import { registerPlayer } from '@/lib/data';
 
 type FormState = {
   full_name: string;
@@ -54,10 +53,8 @@ export default function DaftarTalentaPage() {
   const handleSubmit = async () => {
     setError('');
     setSubmitting(true);
-    await new Promise((r) => setTimeout(r, 600)); // simulate network round-trip
     try {
-      const player: Player = {
-        id: `local-${Date.now()}`,
+      await registerPlayer({
         full_name: form.full_name.trim(),
         nickname: form.nickname.trim() || null,
         birth_date: form.birth_date,
@@ -69,7 +66,6 @@ export default function DaftarTalentaPage() {
         current_club: form.current_club.trim() || null,
         address: form.address.trim() || null,
         phone: form.phone.trim() || null,
-        photo_url: null,
         video_url: form.video_url.trim() || null,
         stats: {
           goals: Number(form.goals) || 0,
@@ -77,14 +73,7 @@ export default function DaftarTalentaPage() {
           appearances: Number(form.appearances) || 0,
           clean_sheets: Number(form.clean_sheets) || 0,
         },
-        status: 'pending',
-        submitted_by: null,
-        approved_by: null,
-        approved_at: null,
-        rejection_reason: null,
-        created_at: new Date().toISOString(),
-      };
-      addLocalPlayer(player);
+      });
       setDone(true);
     } catch {
       setError(t.form_error);

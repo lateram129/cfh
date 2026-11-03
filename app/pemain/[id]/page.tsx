@@ -15,8 +15,10 @@ export default function PlayerDetailPage() {
   const [player, setPlayer] = useState<Player | null | undefined>(undefined);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate after mount, see lib/data/submissions.ts
-    setPlayer(getPlayerById(params.id) ?? null);
+    (async () => {
+      const data = (await getPlayerById(params.id)) ?? null;
+      setPlayer(data);
+    })();
   }, [params.id]);
 
   if (player === undefined) {

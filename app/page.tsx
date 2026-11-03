@@ -3,26 +3,30 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { useI18n, calcAge, formatDateTime } from '@/lib/i18n';
-import { getApprovedPlayers, getTeams, getMatches, getUpcomingMatches, getTeamById } from '@/lib/data';
-import type { Player, Match } from '@/lib/supabase/types';
+import { getApprovedPlayers, getTeams, getMatches, getUpcomingMatches } from '@/lib/data';
+import type { Player, Match, Team } from '@/lib/supabase/types';
 import { POSITIONS } from '@/lib/supabase/types';
 
 export default function Home() {
   const { t, lang } = useI18n();
   const [players, setPlayers] = useState<Player[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [teams, setTeams] = useState<Team[]>([]);
   const [totalMatches, setTotalMatches] = useState(0);
 
   useEffect(() => {
-    // Reads localStorage (see lib/data/submissions.ts), which isn't
-    // available during SSR — hydrate after mount instead of in render.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setPlayers(getApprovedPlayers());
-    setMatches(getUpcomingMatches(2));
-    setTotalMatches(getMatches().length);
+    (async () => {
+      const [approvedPlayers, upcoming, allTeams, allMatches] = await Promise.all([
+        getApprovedPlayers(), getUpcomingMatches(2), getTeams(), getMatches(),
+      ]);
+      setPlayers(approvedPlayers);
+      setMatches(upcoming);
+      setTeams(allTeams);
+      setTotalMatches(allMatches.length);
+    })();
   }, []);
 
-  const teams = getTeams();
+  const teamById = new Map(teams.map((team) => [team.id, team]));
   const latest = players.slice(0, 4);
 
   return (
@@ -67,8 +71,8 @@ export default function Home() {
         ) : (
           <div className="stack">
             {matches.map((m) => {
-              const home = getTeamById(m.home_team_id);
-              const away = getTeamById(m.away_team_id);
+              const home = m.home_team_id ? teamById.get(m.home_team_id) : undefined;
+              const away = m.away_team_id ? teamById.get(m.away_team_id) : undefined;
               return (
                 <div key={m.id} className="match-card">
                   <div className="flex-between mb-2">

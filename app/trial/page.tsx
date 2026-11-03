@@ -11,8 +11,10 @@ export default function TrialPage() {
   const [trials, setTrials] = useState<Trial[]>([]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydrate after mount
-    setTrials(getTrials());
+    (async () => {
+      const data = await getTrials();
+      setTrials(data);
+    })();
   }, []);
 
   return (

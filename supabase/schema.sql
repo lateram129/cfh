@@ -186,6 +186,27 @@ FROM team_matches
 GROUP BY tournament_id, team_id;
 
 -- =============================================
+-- 7b. TOP SCORERS — computed VIEW from goals + players.
+-- Inherits players RLS through the join, so a pending/unapproved player's
+-- goals never show up in the public top-scorer list.
+-- =============================================
+DROP VIEW IF EXISTS public.top_scorers CASCADE;
+
+CREATE VIEW public.top_scorers
+WITH (security_invoker = true) AS
+SELECT
+  g.player_id,
+  p.full_name,
+  p.current_club,
+  p.position,
+  COUNT(*)::int AS goals
+FROM public.goals g
+JOIN public.players p ON p.id = g.player_id
+WHERE g.is_own_goal = false
+GROUP BY g.player_id, p.full_name, p.current_club, p.position
+ORDER BY goals DESC;
+
+-- =============================================
 -- 8. TRIALS (Open Recruitment / Career Portal)
 -- =============================================
 CREATE TABLE IF NOT EXISTS public.trials (
